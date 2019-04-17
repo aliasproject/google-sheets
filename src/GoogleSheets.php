@@ -19,15 +19,14 @@ class GoogleSheets
 
         // Set Authentication
         if (empty($config)) {
-            $config = [
-                'application_name' => $applicationName,
-                'use_application_default_credentials' => true,
-                'access_type' => 'offline',
-                'include_granted_scopes' => [Google_Service_Sheets::SPREADSHEETS]
-            ]
+            $this->client->useApplicationDefaultCredentials();
+        } else {
+            $this->client->setAuthConfig($config);
         }
 
-        $this->client->setAuthConfig($config);
+        $this->client->addScope(Google_Service_Sheets::SPREADSHEETS);
+        $this->client->setApplicationName($applicationName);
+        $this->client->setAccessType('offline');
 
         $this->service = new Google_Service_Sheets($this->client);
     }
@@ -39,22 +38,22 @@ class GoogleSheets
      * @param string $drip_id - Current user Drip ID for update
      * @param array $custom_fields - Array of custom fields to save to user
      */
-    public function save(string $spreadsheetId)
+    public function update(string $spreadsheetId, string $range, array $data)
     {
         $requestBody = new Google_Service_Sheets_ValueRange([
-            'range' => $updateRange,
+            'range' => $range,
             'majorDimension' => 'ROWS',
-            'values' => ['values' => date('c')],
+            'values' => ['values' => $data],
         ]);
 
-        $response = $this->service->spreadsheets_values->update(
+        $response = $this->service->spreadsheets_values->append(
             $spreadsheetId,
-            $tableRange,
-            $updateBody,
+            $range,
+            $requestBody,
             ['valueInputOption' => 'USER_ENTERED']
         );
 
-        return $response
+        return $response;
     }
 
     public function read(string $spreadsheet_id, string $range)
@@ -63,6 +62,5 @@ class GoogleSheets
         $values = $response->getValues();
 
         return $values;
-        return $this->makeRequest($url, $data, true);
     }
 }
